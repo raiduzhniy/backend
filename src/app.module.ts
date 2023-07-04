@@ -20,7 +20,7 @@ import { AppService } from './app.service';
     LoggerModule.forRoot({
       pinoHttp: {
         transport: {
-          target: 'pino-prettsy',
+          target: 'pino-pretty',
         },
         level: 'debug',
         serializers: {
