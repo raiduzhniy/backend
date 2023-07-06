@@ -11,7 +11,7 @@ import {
 import { Roles } from '../../shared/decorators';
 import { MongoExceptionFilter } from '../../shared/exception-filters';
 import { RolesGuard } from '../../shared/guards';
-import { UserDto, UserUpdateDto } from './user-dto.class';
+import { UserDto, UserUpdateDto } from './users.dto';
 import { User } from './user.schema';
 import { UserRole } from './users.enum';
 import { UsersService } from './users.service';
@@ -30,7 +30,7 @@ export class UsersController {
   @Get(':id')
   @Roles(UserRole.Admin)
   async getUser(@Param('id') id: string): Promise<User> {
-    return this.usersService.getUser(id);
+    return this.usersService.getUserById(id);
   }
 
   @Post()
@@ -52,6 +52,6 @@ export class UsersController {
   @Put(':id/reset-password')
   @Roles(UserRole.Admin)
   async resetPassword(@Param('id') id: string): Promise<User> {
-    return this.usersService.resetUserPassword(id);
+    return this.usersService.changeUserPassword(id);
   }
 }
