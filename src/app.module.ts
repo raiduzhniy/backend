@@ -6,16 +6,18 @@ import { LoggerModule } from 'nestjs-pino';
 import { AuthModule } from './modules/auth';
 import { UsersModule } from './modules/users';
 import { AuthGuard } from './shared/guards/auth.guard';
+import configuration from '../environments/configuration.environment';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      load: [configuration],
     }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        uri: configService.get<string>('CONNECTION_STRING'),
+        uri: configService.get<string>('connectionString'),
       }),
       inject: [ConfigService],
     }),

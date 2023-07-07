@@ -12,11 +12,9 @@ async function bootstrap() {
   );
 
   const configService = app.get(ConfigService);
-
   // @ts-ignore
-  app.setGlobalPrefix(configService.get('API_URL'));
-
+  app.setGlobalPrefix(configService.get('apiUrl'));
   // @ts-ignore
-  await app.listen(configService.get('PORT') || 3000);
+  await app.listen(configService.get('port') || 3000);
 }
 bootstrap();

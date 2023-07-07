@@ -9,7 +9,7 @@ import { AuthController } from './auth.controller';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_PRIVATE_KEY'),
+        secret: configService.get<string>('jwtSecret'),
       }),
       inject: [ConfigService],
     }),
