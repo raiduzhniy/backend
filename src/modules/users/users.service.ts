@@ -1,11 +1,11 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, PopulateOptions } from 'mongoose';
+import { FilterQuery, Model, PopulateOptions } from 'mongoose';
 import { IsExistingAbstract } from '../../shared/abstract-classes';
 import { Owner, OwnerDto, OwnersService } from '../owners';
 import { Vehicle, VehicleDto, VehiclesService } from '../vehicles';
 import { User, UserSchema } from './user.schema';
-import { UserDto, UserUpdateDto } from './user-dto.class';
+import { UserDto, UserUpdateDto } from './users.dto';
 import * as bcrypt from 'bcrypt';
 
 const DEFAULT_USER_POPLATE = ['owners', 'vehicles'];
@@ -24,13 +24,25 @@ export class UsersService extends IsExistingAbstract<User> {
     return this.userModel.find().populate(['owners', 'vehicles']);
   }
 
-  async getUser(
+  async getUserById(
     userId: string,
     populate:
       | PopulateOptions
       | (PopulateOptions | string)[] = DEFAULT_USER_POPLATE,
   ): Promise<User> {
     return this.userModel.findById(userId).populate(populate);
+  }
+
+  async getFullUser(
+    filter: FilterQuery<User>,
+    populate:
+      | PopulateOptions
+      | (PopulateOptions | string)[] = DEFAULT_USER_POPLATE,
+  ): Promise<User> {
+    return this.userModel
+      .findOne(filter)
+      .select('+passwordHash')
+      .populate(populate);
   }
 
   async createUser({
@@ -74,7 +86,7 @@ export class UsersService extends IsExistingAbstract<User> {
     userId: string,
     { roles, owners, vehicles }: UserUpdateDto,
   ): Promise<User> {
-    const user = await this.getUser(userId, []);
+    const user = await this.getUserById(userId, []);
 
     await Promise.all(this.deleteOwners(user.owners as string[]));
     await Promise.all(this.deleteVehicles(user.vehicles as string[]));
@@ -97,12 +109,15 @@ export class UsersService extends IsExistingAbstract<User> {
     );
   }
 
-  async resetUserPassword(userId: string): Promise<User> {
-    const user = await this.getUser(userId, []);
+  async changeUserPassword(
+    userId: string,
+    newPassword?: string,
+  ): Promise<User> {
+    const user = await this.getUserById(userId, []);
 
     return this.userModel
       .findByIdAndUpdate(userId, {
-        passwordHash: await this.createPasswordHash(user.login),
+        passwordHash: await this.createPasswordHash(newPassword || user.login),
       })
       .populate(DEFAULT_USER_POPLATE);
   }

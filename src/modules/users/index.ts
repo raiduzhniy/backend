@@ -1,3 +1,3 @@
 export * from './users.module';
-export * from './user-dto.class';
+export * from './users.dto';
 export * from './user.schema';

@@ -1,4 +1,4 @@
 export * from './owners.module';
-export * from './owner-dto.class';
+export * from './owners.dto';
 export * from './owner.schema';
 export * from './owners.service';
