@@ -3,18 +3,18 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 
-async function bootstrap() {
+(async () => {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  const configService: ConfigService = app.get(ConfigService);
+  const prefix = configService.get('apiUrl');
+  const port = configService.get('port') || 3000;
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
     }),
   );
+  app.setGlobalPrefix(prefix);
 
-  const configService = app.get(ConfigService);
-  // @ts-ignore
-  app.setGlobalPrefix(configService.get('apiUrl'));
-  // @ts-ignore
-  await app.listen(configService.get('port') || 3000);
-}
-bootstrap();
+  await app.listen(port);
+})();
