@@ -3,13 +3,18 @@ export default () => ({
   apiUrl: '/api/v1',
   connectionString:
     'mongodb+srv://Komoff:gPlm6HQbZWUhtu0I@development.wsztxbu.mongodb.net/osbb?retryWrites=true&w=majority',
-  jwtSecret: 'osbbrdn3-development-secret-key',
+  jwtSecret: process.env.JWT_SECRET,
   firebaseConfig: {
-    apiKey: 'AIzaSyAijcOMytg2wbBFg-jzHEtYGzuOaXEHVqY',
-    authDomain: 'raiduzhniy-backend.firebaseapp.com',
-    projectId: 'raiduzhniy-backend',
-    storageBucket: 'raiduzhniy-backend.appspot.com',
-    messagingSenderId: '887573540677',
-    appId: '1:887573540677:web:d650fe8fc73ad1da2c182c',
+    apiKey: process.env.FB_API_KEY,
+    authDomain: process.env.FB_AUTH_DOMAIN,
+    projectId: process.env.FB_PROJECT_ID,
+    storageBucket: process.env.FB_STORAGE_BUCKET,
+    messagingSenderId: process.env.FB_MESSAGING_SENDER_ID,
+    appId: process.env.FB_APP_ID,
+  },
+  serviceAccountCred: {
+    projectId: process.env.FB_PROJECT_ID,
+    clientEmail: process.env.FB_CLIENT_EMAIL,
+    privateKey: process.env.FB_PRIVATE_KEY,
   },
 });

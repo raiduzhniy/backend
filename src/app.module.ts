@@ -4,9 +4,9 @@ import { APP_GUARD } from '@nestjs/core';
 import { MongooseModule } from '@nestjs/mongoose';
 import { LoggerModule } from 'nestjs-pino';
 import { AuthModule } from './modules/auth';
+import { FirebaseModule } from './modules/firebase';
 import { UsersModule } from './modules/users';
 import { AuthGuard } from './shared/guards/auth.guard';
-import { FirebaseStorageModule } from './modules/firebase-storage';
 import configuration from '../environments/configuration.environment';
 
 @Module({
@@ -39,7 +39,7 @@ import configuration from '../environments/configuration.environment';
     }),
     UsersModule,
     AuthModule,
-    FirebaseStorageModule,
+    FirebaseModule,
   ],
   providers: [
     {
