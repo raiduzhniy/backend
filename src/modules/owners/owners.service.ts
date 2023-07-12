@@ -1,20 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { Owner, OwnerSchema } from './owner.schema';
-import { OwnerDto } from './owners.dto';
+import { FirestoreBase, FirestoreService } from '../firebase/firestore';
+import { Owner } from './owner.schema';
 
 @Injectable()
-export class OwnersService {
-  constructor(@InjectModel(Owner.name) private ownerModel: Model<Owner>) {}
+export class OwnersService extends FirestoreBase<Owner> {
+  protected readonly collectionName: string = 'owners';
 
-  createOwner(ownerDto: OwnerDto): Promise<Owner> {
-    const owner: OwnerSchema = new this.ownerModel(ownerDto);
-
-    return owner.save();
-  }
-
-  findOwnerAndDelete(ownerId: string): Promise<Owner> {
-    return this.ownerModel.findByIdAndDelete(ownerId);
+  constructor(firestoreService: FirestoreService) {
+    super(firestoreService);
   }
 }

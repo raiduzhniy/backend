@@ -7,7 +7,7 @@ import { AuthModule } from './modules/auth';
 import { FirebaseModule } from './modules/firebase';
 import { UsersModule } from './modules/users';
 import { AuthGuard } from './shared/guards/auth.guard';
-import configuration from '../environments/configuration.environment';
+import configuration from './environments/configuration.environment';
 
 @Module({
   imports: [

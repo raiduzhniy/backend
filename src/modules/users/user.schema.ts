@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { HydratedDocument } from 'mongoose';
+import { SchemaBase } from '../../shared/abstract-classes';
 import { Owner } from '../owners';
 import { Vehicle } from '../vehicles';
 import { UserRole } from './users.enum';
@@ -7,7 +8,7 @@ import { UserRole } from './users.enum';
 export type UserSchema = HydratedDocument<User>;
 
 @Schema()
-export class User {
+export class User extends SchemaBase {
   @Prop({
     type: String,
     required: true,
@@ -31,8 +32,6 @@ export class User {
 
   @Prop([{ type: mongoose.Schema.Types.ObjectId, ref: 'Vehicle' }])
   vehicles: (Vehicle | string)[];
-
-  id: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

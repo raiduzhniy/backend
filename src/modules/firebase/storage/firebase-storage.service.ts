@@ -5,14 +5,12 @@ import {
   UploadResult,
 } from '@firebase/storage';
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { initializeApp } from 'firebase/app';
 import {
+  deleteObject,
+  getDownloadURL,
   getStorage,
   ref,
   uploadBytes,
-  getDownloadURL,
-  deleteObject,
 } from 'firebase/storage';
 import { StorageType } from './firebase-storage.enum';
 import {
@@ -22,10 +20,6 @@ import {
 
 @Injectable()
 export class FirebaseStorageService {
-  constructor(configService: ConfigService) {
-    initializeApp(configService.get('firebaseConfig'));
-  }
-
   uploadFile(
     { storageType, fileName, fileData }: UploadFileInterface,
     metadata?: UploadMetadata,

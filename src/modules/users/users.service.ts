@@ -1,27 +1,34 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { FilterQuery, Model, PopulateOptions } from 'mongoose';
-import { IsExistingAbstract } from '../../shared/abstract-classes';
-import { Owner, OwnerDto, OwnersService } from '../owners';
-import { Vehicle, VehicleDto, VehiclesService } from '../vehicles';
-import { User, UserSchema } from './user.schema';
-import { UserDto, UserUpdateDto } from './users.dto';
 import * as bcrypt from 'bcrypt';
+import { FilterQuery, Model, PopulateOptions } from 'mongoose';
+import { FirestoreBase, FirestoreService } from '../firebase/firestore';
+import { OwnersService } from '../owners';
+import { VehiclesService } from '../vehicles';
+import { User } from './user.schema';
+import { UserDto, UserUpdateDto } from './users.dto';
+import { or, where } from 'firebase/firestore';
 
 const DEFAULT_USER_POPLATE = ['owners', 'vehicles'];
 
 @Injectable()
-export class UsersService extends IsExistingAbstract<User> {
+export class UsersService extends FirestoreBase<User> {
+  protected readonly collectionName: string = 'users';
+
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
+    firestoreService: FirestoreService,
     private ownersService: OwnersService,
     private vehiclesService: VehiclesService,
   ) {
-    super(userModel);
+    super(firestoreService);
   }
 
-  async getUsers(): Promise<User[]> {
-    return this.userModel.find().populate(['owners', 'vehicles']);
+  getUsers() {
+    return this.getDocuments({
+      populate: DEFAULT_USER_POPLATE,
+      removeFields: ['passwordHash'],
+    });
   }
 
   async getUserById(
@@ -30,7 +37,10 @@ export class UsersService extends IsExistingAbstract<User> {
       | PopulateOptions
       | (PopulateOptions | string)[] = DEFAULT_USER_POPLATE,
   ): Promise<User> {
-    return this.userModel.findById(userId).populate(populate);
+    return this.getDocumentById(userId, undefined, {
+      populate: DEFAULT_USER_POPLATE,
+      removeFields: ['passwordHash'],
+    });
   }
 
   async getFullUser(
@@ -53,33 +63,43 @@ export class UsersService extends IsExistingAbstract<User> {
     password,
     vehicles,
   }: UserDto): Promise<User> {
-    const isUserExist = await this.checkIsExist({
-      $or: [{ login }, { apartmentNumber }],
+    const existingUsers = await this.getDocuments({
+      filter: or(
+        where('login', '==', login),
+        where('apartmentNumber', '==', apartmentNumber),
+      ),
     });
 
-    if (isUserExist) {
+    if (existingUsers.length) {
       throw new BadRequestException(
         'User with the same login or apartment number is existing',
       );
     }
 
-    const [ownersIds, vehicleIds] = [
-      await Promise.all(this.createOwners(owners)),
-      await Promise.all(this.createVehicles(vehicles)),
-    ];
+    const ownerIds = await Promise.all(
+      owners.map((owner) =>
+        this.ownersService.addDoc(owner).then((doc) => doc.id),
+      ),
+    );
+
+    const vehicleIds = await Promise.all(
+      vehicles.map((vehicle) =>
+        this.vehiclesService.addDoc(vehicle).then((doc) => doc.id),
+      ),
+    );
 
     const passwordHash = await this.createPasswordHash(password);
 
-    const user: UserSchema = new this.userModel({
+    const user: User = {
       login,
       roles,
       apartmentNumber,
-      owners: ownersIds,
+      owners: ownerIds,
       vehicles: vehicleIds,
       passwordHash,
-    });
+    };
 
-    return user.save();
+    return this.addDoc(user).then((docRef) => this.buildUser(user, docRef.id));
   }
 
   async updateUser(
@@ -91,16 +111,23 @@ export class UsersService extends IsExistingAbstract<User> {
     await Promise.all(this.deleteOwners(user.owners as string[]));
     await Promise.all(this.deleteVehicles(user.vehicles as string[]));
 
-    const [ownersIds, vehicleIds] = [
-      await Promise.all(this.createOwners(owners)),
-      await Promise.all(this.createVehicles(vehicles)),
-    ];
+    const ownerIds = await Promise.all(
+      owners.map((owner) =>
+        this.ownersService.addDoc(owner).then((doc) => doc.id),
+      ),
+    );
+
+    const vehicleIds = await Promise.all(
+      vehicles.map((vehicle) =>
+        this.vehiclesService.addDoc(vehicle).then((doc) => doc.id),
+      ),
+    );
 
     return this.userModel.findByIdAndUpdate(
       userId,
       {
         vehicles: vehicleIds,
-        owners: ownersIds,
+        owners: ownerIds,
         roles,
       },
       {
@@ -122,31 +149,15 @@ export class UsersService extends IsExistingAbstract<User> {
       .populate(DEFAULT_USER_POPLATE);
   }
 
-  private createOwners(ownerDtos: OwnerDto[] = []): Promise<Owner>[] {
-    return ownerDtos?.map(async (ownerDto) => {
-      const owner = await this.ownersService.createOwner(ownerDto);
-
-      return owner['_id'];
-    });
-  }
-
-  private createVehicles(vehicleDtos: VehicleDto[] = []): Promise<Vehicle>[] {
-    return vehicleDtos?.map(async (vehicleDto) => {
-      const vehicle = await this.vehiclesService.createVehicle(vehicleDto);
-
-      return vehicle['_id'];
-    });
-  }
-
-  private deleteOwners(ownerIds: string[]): Promise<Owner>[] {
+  private deleteOwners(ownerIds: string[]): Promise<void>[] {
     return ownerIds.map(async (ownerId) => {
-      return await this.ownersService.findOwnerAndDelete(ownerId);
+      return await this.ownersService.findByIdAndDelete(ownerId);
     });
   }
 
-  private deleteVehicles(vehicleIds: string[]): Promise<Vehicle>[] {
+  private deleteVehicles(vehicleIds: string[]): Promise<void>[] {
     return vehicleIds.map(async (vehicleIds) => {
-      return await this.vehiclesService.findVehicleAndDelete(vehicleIds);
+      return await this.vehiclesService.findByIdAndDelete(vehicleIds);
     });
   }
 
@@ -154,5 +165,13 @@ export class UsersService extends IsExistingAbstract<User> {
     const salt = await bcrypt.genSalt();
 
     return bcrypt.hashSync(password, salt);
+  }
+
+  private buildUser(user: User, id: string): User {
+    const { passwordHash, ...builtUser } = user;
+    return {
+      ...builtUser,
+      id,
+    };
   }
 }

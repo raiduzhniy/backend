@@ -23,7 +23,7 @@ export class UsersController {
 
   @Get()
   @Roles(UserRole.Admin)
-  async getUsers(): Promise<User[]> {
+  async getUsers() {
     return this.usersService.getUsers();
   }
 

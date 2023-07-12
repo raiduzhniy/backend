@@ -1,4 +1,6 @@
-export default () => ({
+import { Environment } from './environment.interface';
+
+export default (): Environment => ({
   port: 3333,
   apiUrl: '/api/v1',
   connectionString:
@@ -12,7 +14,7 @@ export default () => ({
     messagingSenderId: process.env.FB_MESSAGING_SENDER_ID,
     appId: process.env.FB_APP_ID,
   },
-  serviceAccountCred: {
+  serviceAccount: {
     projectId: process.env.FB_PROJECT_ID,
     clientEmail: process.env.FB_CLIENT_EMAIL,
     privateKey: process.env.FB_PRIVATE_KEY,
