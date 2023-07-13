@@ -1,22 +1,20 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
 import * as bcrypt from 'bcrypt';
-import { FilterQuery, Model, PopulateOptions } from 'mongoose';
 import { FirestoreBase, FirestoreService } from '../firebase/firestore';
 import { OwnersService } from '../owners';
 import { VehiclesService } from '../vehicles';
 import { User } from './user.schema';
 import { UserDto, UserUpdateDto } from './users.dto';
-import { or, where } from 'firebase/firestore';
+import { Filter } from 'firebase-admin/firestore';
 
-const DEFAULT_USER_POPLATE = ['owners', 'vehicles'];
+const DEFAULT_USER_POPULATE_FIELDS = ['owners', 'vehicles'];
+const DEFAULT_USER_REMOVE_FIELDS = ['passwordHash'];
 
 @Injectable()
 export class UsersService extends FirestoreBase<User> {
   protected readonly collectionName: string = 'users';
 
   constructor(
-    @InjectModel(User.name) private userModel: Model<User>,
     firestoreService: FirestoreService,
     private ownersService: OwnersService,
     private vehiclesService: VehiclesService,
@@ -26,33 +24,29 @@ export class UsersService extends FirestoreBase<User> {
 
   getUsers() {
     return this.getDocuments({
-      populate: DEFAULT_USER_POPLATE,
-      removeFields: ['passwordHash'],
+      populate: DEFAULT_USER_POPULATE_FIELDS,
+      removeFields: DEFAULT_USER_REMOVE_FIELDS,
     });
   }
 
   async getUserById(
     userId: string,
-    populate:
-      | PopulateOptions
-      | (PopulateOptions | string)[] = DEFAULT_USER_POPLATE,
+    removeFields = DEFAULT_USER_REMOVE_FIELDS,
   ): Promise<User> {
     return this.getDocumentById(userId, undefined, {
-      populate: DEFAULT_USER_POPLATE,
-      removeFields: ['passwordHash'],
+      populate: DEFAULT_USER_POPULATE_FIELDS,
+      removeFields,
     });
   }
 
-  async getFullUser(
-    filter: FilterQuery<User>,
-    populate:
-      | PopulateOptions
-      | (PopulateOptions | string)[] = DEFAULT_USER_POPLATE,
-  ): Promise<User> {
-    return this.userModel
-      .findOne(filter)
-      .select('+passwordHash')
-      .populate(populate);
+  async getUserByLogin(login: string): Promise<User> {
+    return this.getDocuments({
+      buildQuery: {
+        filters: [['login', '==', login]],
+        limit: 1,
+      },
+      populate: DEFAULT_USER_POPULATE_FIELDS,
+    }).then(([user]) => user);
   }
 
   async createUser({
@@ -64,10 +58,14 @@ export class UsersService extends FirestoreBase<User> {
     vehicles,
   }: UserDto): Promise<User> {
     const existingUsers = await this.getDocuments({
-      filter: or(
-        where('login', '==', login),
-        where('apartmentNumber', '==', apartmentNumber),
-      ),
+      buildQuery: {
+        filters: [
+          Filter.or(
+            Filter.where('login', '==', login),
+            Filter.where('apartmentNumber', '==', apartmentNumber),
+          ),
+        ],
+      },
     });
 
     if (existingUsers.length) {
@@ -99,14 +97,17 @@ export class UsersService extends FirestoreBase<User> {
       passwordHash,
     };
 
-    return this.addDoc(user).then((docRef) => this.buildUser(user, docRef.id));
+    return this.addDoc(user, {
+      removeFields: DEFAULT_USER_REMOVE_FIELDS,
+      populate: DEFAULT_USER_POPULATE_FIELDS,
+    });
   }
 
   async updateUser(
     userId: string,
     { roles, owners, vehicles }: UserUpdateDto,
   ): Promise<User> {
-    const user = await this.getUserById(userId, []);
+    const user = await this.getDocumentById(userId);
 
     await Promise.all(this.deleteOwners(user.owners as string[]));
     await Promise.all(this.deleteVehicles(user.vehicles as string[]));
@@ -123,30 +124,39 @@ export class UsersService extends FirestoreBase<User> {
       ),
     );
 
-    return this.userModel.findByIdAndUpdate(
+    return this.updateDoc(userId, {
+      vehicles: vehicleIds,
+      owners: ownerIds,
+      roles,
+    });
+  }
+
+  async changePassword(userId: string, newPassword: string) {
+    return this.updateDoc(
       userId,
       {
-        vehicles: vehicleIds,
-        owners: ownerIds,
-        roles,
+        passwordHash: await this.createPasswordHash(newPassword),
       },
       {
-        new: true,
+        populate: DEFAULT_USER_POPULATE_FIELDS,
+        removeFields: DEFAULT_USER_REMOVE_FIELDS,
       },
     );
   }
 
-  async changeUserPassword(
-    userId: string,
-    newPassword?: string,
-  ): Promise<User> {
-    const user = await this.getUserById(userId, []);
+  async resetPassword(userId: string): Promise<User> {
+    const user = await this.getUserById(userId);
 
-    return this.userModel
-      .findByIdAndUpdate(userId, {
-        passwordHash: await this.createPasswordHash(newPassword || user.login),
-      })
-      .populate(DEFAULT_USER_POPLATE);
+    return this.updateDoc(
+      userId,
+      {
+        passwordHash: await this.createPasswordHash(user.login),
+      },
+      {
+        populate: DEFAULT_USER_POPULATE_FIELDS,
+        removeFields: DEFAULT_USER_REMOVE_FIELDS,
+      },
+    );
   }
 
   private deleteOwners(ownerIds: string[]): Promise<void>[] {
@@ -165,13 +175,5 @@ export class UsersService extends FirestoreBase<User> {
     const salt = await bcrypt.genSalt();
 
     return bcrypt.hashSync(password, salt);
-  }
-
-  private buildUser(user: User, id: string): User {
-    const { passwordHash, ...builtUser } = user;
-    return {
-      ...builtUser,
-      id,
-    };
   }
 }

@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
-import { MongooseModule } from '@nestjs/mongoose';
 import { LoggerModule } from 'nestjs-pino';
 import { AuthModule } from './modules/auth';
 import { FirebaseModule } from './modules/firebase';
@@ -14,13 +13,6 @@ import configuration from './environments/configuration.environment';
     ConfigModule.forRoot({
       isGlobal: true,
       load: [configuration],
-    }),
-    MongooseModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        uri: configService.get<string>('connectionString'),
-      }),
-      inject: [ConfigService],
     }),
     LoggerModule.forRoot({
       pinoHttp: {

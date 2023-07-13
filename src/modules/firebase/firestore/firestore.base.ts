@@ -1,85 +1,70 @@
-import {
-  collection,
-  CollectionReference,
-  deleteDoc,
-  doc,
-  getDocs,
-  getDoc,
-  query,
-  addDoc,
-  DocumentReference,
-  DocumentData,
-} from 'firebase/firestore';
+import { QUERY_BUILDER_MAP } from './firestore.constant';
 import {
   Populate,
-  GetDocsQuerySettings,
-  GetDocQuerySettings,
+  GetDocsTransformSettings,
+  GetDocTransformSettings,
+  BuildQuery,
 } from './firestore.interface';
 import { transformDocToData } from './firestore.operators';
 import { FirestoreService } from './firestore.service';
+import {
+  CollectionReference,
+  DocumentData,
+  Query,
+} from 'firebase-admin/firestore';
 
 export abstract class FirestoreBase<T> {
   protected abstract readonly collectionName: string;
 
   protected constructor(private firestoreService: FirestoreService) {}
 
-  addDoc(document: T): Promise<DocumentReference<DocumentData, DocumentData>> {
-    // TODO [Komoff] make it with transformDocToData
-    return addDoc(this.collection, document);
+  addDoc(document: T, settings?: GetDocTransformSettings): Promise<T> {
+    return this.collection
+      .add(document)
+      .then((docRef) => docRef.get())
+      .then((docSnapshot) => transformDocToData(docSnapshot))
+      .then((doc: T) => this.transformDoc(doc, settings));
   }
 
-  getDocuments(settings?: GetDocsQuerySettings): Promise<T[]> {
-    return getDocs(
-      query(
-        this.collection,
-        settings?.filter,
-        ...(settings?.queryNonFilterConstraint || []),
-      ),
-    )
+  updateDoc(
+    id: string,
+    document: Partial<T>,
+    settings?: GetDocTransformSettings,
+  ): Promise<T> {
+    return this.collection
+      .doc(id)
+      .update(document)
+      .then(async () => await this.getDocumentById(id, undefined, settings));
+  }
+
+  getDocuments(settings?: GetDocsTransformSettings): Promise<T[]> {
+    return this.buildQuery(settings.buildQuery)
+      .get()
       .then((snapshot) =>
         snapshot.docs.map((doc) => transformDocToData<T>(doc)),
       )
-      .then(async (documents) => {
-        if (settings.removeFields) {
-          documents.forEach((doc) => {
-            settings.removeFields.forEach((field) => delete doc[field]);
-          });
-        }
-
-        if (settings.populate) {
-          return await this.populateDocs(documents, settings.populate);
-        }
-
-        return documents;
-      });
+      .then((docs) => this.transformDocs(docs, settings));
   }
 
   getDocumentById(
     id: string,
     collectionName = this.collectionName,
-    settings?: GetDocQuerySettings,
+    settings?: GetDocTransformSettings,
   ): Promise<T> {
-    return getDoc(doc(this.firestoreService.db, collectionName, id))
-      .then((doc) => transformDocToData(doc))
-      .then(async (doc) => {
-        if (settings?.removeFields) {
-          settings.removeFields.forEach((field) => delete doc[field]);
-        }
-
-        if (settings?.populate) {
-          return await this.populateDoc(doc, settings.populate);
-        }
-
-        return doc;
-      });
+    return this.firestoreService.db
+      .collection(collectionName)
+      .doc(id)
+      .get()
+      .then((snapshot) => transformDocToData(snapshot))
+      .then((doc: T) => this.transformDoc(doc, settings));
   }
 
   findByIdAndDelete(id: string): Promise<void> {
-    return deleteDoc(doc(this.firestoreService.db, this.collectionName, id));
+    return this.collection.doc(id).delete().then();
   }
 
-  get collection(): CollectionReference<DocumentData, DocumentData> {
-    return collection(this.firestoreService.db, this.collectionName);
+  get collection(): CollectionReference<DocumentData> {
+    return this.firestoreService.db.collection(this.collectionName);
   }
 
   private async populateDocs(
@@ -98,7 +83,7 @@ export abstract class FirestoreBase<T> {
       async (resObj, populate) => {
         return {
           ...(await resObj),
-          ...(await this.testForNow(
+          ...(await this.populate(
             doc[typeof populate === 'string' ? populate : populate.field],
             populate,
           )),
@@ -110,7 +95,7 @@ export abstract class FirestoreBase<T> {
     return { ...doc, ...populatedProperties };
   }
 
-  private async testForNow(
+  private async populate(
     obj,
     populate: Populate,
   ): Promise<{ [key: string]: unknown | unknown[] }> {
@@ -139,6 +124,54 @@ export abstract class FirestoreBase<T> {
       return getData(obj, collectionName);
     }
 
-    return this.testForNow(obj[populate.field], populate.populate);
+    return this.populate(obj[populate.field], populate.populate);
+  }
+
+  private async transformDoc(
+    doc: T,
+    settings: GetDocTransformSettings,
+  ): Promise<T> {
+    if (settings?.removeFields) {
+      settings.removeFields.forEach((field) => delete doc[field]);
+    }
+
+    if (settings?.populate) {
+      return await this.populateDoc(doc, settings.populate);
+    }
+
+    return doc;
+  }
+
+  private async transformDocs(
+    docs: T[],
+    settings: Omit<GetDocsTransformSettings, 'buildQuery'>,
+  ): Promise<T[]> {
+    if (settings.removeFields) {
+      docs.forEach((doc) => {
+        settings.removeFields.forEach((field) => delete doc[field]);
+      });
+    }
+
+    if (settings.populate) {
+      return await this.populateDocs(docs, settings.populate);
+    }
+
+    return docs;
+  }
+
+  private buildQuery(buildQuery: BuildQuery = {}): Query {
+    return Object.entries(buildQuery).reduce((collection, [key, value]) => {
+      if (key === 'filters') {
+        return value.reduce((query, filter) => {
+          if (Array.isArray(filter)) {
+            return query[QUERY_BUILDER_MAP[key]](...filter);
+          }
+
+          return query[QUERY_BUILDER_MAP[key]](filter);
+        }, collection);
+      }
+
+      return collection[QUERY_BUILDER_MAP[key]](value);
+    }, this.collection);
   }
 }

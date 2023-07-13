@@ -1,7 +1,9 @@
-import {
-  QueryCompositeFilterConstraint,
-  QueryNonFilterConstraint,
-} from 'firebase/firestore';
+import { Filter, Query, WhereFilterOp } from 'firebase-admin/firestore';
+import { OrderDirection } from './firestore.enum';
+
+type OrderField = string;
+
+export type OrderBy = [OrderField, OrderDirection];
 
 export type Populate =
   | string
@@ -10,12 +12,24 @@ export type Populate =
       populate?: Populate;
     };
 
-export interface GetDocQuerySettings {
+export interface GetDocTransformSettings {
   populate?: Populate[];
   removeFields?: string[];
 }
 
-export interface GetDocsQuerySettings extends GetDocQuerySettings {
-  filter?: QueryCompositeFilterConstraint;
-  queryNonFilterConstraint?: QueryNonFilterConstraint[];
+export type FilterQuery = [string, WhereFilterOp, any] | Filter;
+
+export interface BuildQuery {
+  filters?: FilterQuery[];
+  orderBy?: OrderBy;
+  limit?: number;
+  // TODO [Komoff] add builders if need
 }
+
+export interface GetDocsTransformSettings extends GetDocTransformSettings {
+  buildQuery?: BuildQuery;
+}
+
+export type QueryBuilderMap = {
+  [key in keyof BuildQuery]: keyof Query;
+};
