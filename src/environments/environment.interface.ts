@@ -5,7 +5,6 @@ export interface Environment {
   port: number;
   apiUrl: string;
   jwtSecret: string;
-  connectionString?: string;
   firebaseConfig: FirebaseOptions;
   serviceAccount: ServiceAccount;
 }
