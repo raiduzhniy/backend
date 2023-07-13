@@ -1,1 +1,1 @@
-export * from './is-existing.abstract';
+export * from './schema.base';

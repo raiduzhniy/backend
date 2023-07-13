@@ -23,7 +23,7 @@ export class UsersController {
 
   @Get()
   @Roles(UserRole.Admin)
-  async getUsers(): Promise<User[]> {
+  async getUsers() {
     return this.usersService.getUsers();
   }
 
@@ -52,6 +52,6 @@ export class UsersController {
   @Put(':id/reset-password')
   @Roles(UserRole.Admin)
   async resetPassword(@Param('id') id: string): Promise<User> {
-    return this.usersService.changeUserPassword(id);
+    return this.usersService.resetPassword(id);
   }
 }

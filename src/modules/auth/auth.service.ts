@@ -22,7 +22,7 @@ export class AuthService {
   ) {}
 
   async login({ login, password }: AuthDto): Promise<SuccessfulLoginDto> {
-    const user = await this.usersService.getFullUser({ login });
+    const user = await this.usersService.getUserByLogin(login);
 
     if (!user) {
       throw INCORRECT_USER_OR_PASSWORD_EXCEPTION;
@@ -60,7 +60,7 @@ export class AuthService {
       throw new BadRequestException('Passwords do not match');
     }
 
-    const user = await this.usersService.getFullUser({ _id: tokenPayload.id });
+    const user = await this.usersService.getUserById(tokenPayload.id, []);
 
     const isPasswordCorrect = await this.isPasswordCorrect(
       password,
@@ -71,7 +71,7 @@ export class AuthService {
       throw new BadRequestException('Incorrect current password');
     }
 
-    return this.usersService.changeUserPassword(user.id, newPassword);
+    return this.usersService.changePassword(user.id, newPassword);
   }
 
   private createToken(payload: TokenPayload): Promise<string> {

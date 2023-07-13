@@ -1,5 +1,5 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import { FirebaseStorageService, StorageType } from '../firebase-storage';
+import { FirebaseStorageService, StorageType } from '../firebase/storage';
 
 @Injectable()
 export class ImagesService {
