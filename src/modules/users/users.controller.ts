@@ -5,11 +5,9 @@ import {
   Param,
   Post,
   Put,
-  UseFilters,
   UseGuards,
 } from '@nestjs/common';
 import { Roles } from '../../shared/decorators';
-import { MongoExceptionFilter } from '../../shared/exception-filters';
 import { RolesGuard } from '../../shared/guards';
 import { UserDto, UserUpdateDto } from './users.dto';
 import { User } from './user.schema';
@@ -34,7 +32,6 @@ export class UsersController {
   }
 
   @Post()
-  @UseFilters(MongoExceptionFilter)
   @Roles(UserRole.Admin)
   async createUser(@Body() userDto: UserDto): Promise<User> {
     return this.usersService.createUser(userDto);

@@ -3,8 +3,6 @@ import { Environment } from './environment.interface';
 export default (): Environment => ({
   port: 3333,
   apiUrl: '/api/v1',
-  connectionString:
-    'mongodb+srv://Komoff:gPlm6HQbZWUhtu0I@development.wsztxbu.mongodb.net/osbb?retryWrites=true&w=majority',
   jwtSecret: process.env.JWT_SECRET,
   firebaseConfig: {
     apiKey: process.env.FB_API_KEY,
