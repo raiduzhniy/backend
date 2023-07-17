@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Put, Req } from '@nestjs/common';
+import { Body, Controller, Get, Post, Put, Req } from '@nestjs/common';
 import { Request } from 'express';
 import { IsPublicRequest } from '../../shared/decorators';
 import { User } from '../users';
@@ -9,6 +9,13 @@ import { AuthService } from './auth.service';
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
+
+  @Get('user')
+  async getUser(@Req() request: Request): Promise<User> {
+    const tokenPayload: TokenPayload = request['tokenPayload'];
+
+    return this.authService.getUser(tokenPayload.id);
+  }
 
   @Post('login')
   @IsPublicRequest()
