@@ -1,0 +1,8 @@
+{
+  "projects": {
+    "default": "raiduzhniy-backend",
+    "prod": "raiduzhniy-osbb"
+  },
+  "targets": {},
+  "etags": {}
+}
