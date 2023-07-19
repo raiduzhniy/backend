@@ -1,22 +1,23 @@
-import { QUERY_BUILDER_MAP } from './firestore.constant';
-import {
-  Populate,
-  GetDocsTransformSettings,
-  GetDocTransformSettings,
-  BuildQuery,
-} from './firestore.interface';
-import { transformDocToData } from './firestore.operators';
-import { FirestoreService } from './firestore.service';
 import {
   CollectionReference,
   DocumentData,
+  Firestore,
+  getFirestore,
   Query,
 } from 'firebase-admin/firestore';
+import { QUERY_BUILDER_MAP } from './firestore.constant';
+import {
+  BuildQuery,
+  GetDocsTransformSettings,
+  GetDocTransformSettings,
+  Populate,
+} from './firestore.interface';
+import { transformDocToData } from './firestore.operators';
 
 export abstract class FirestoreBase<T> {
-  protected abstract readonly collectionName: string;
+  db: Firestore = getFirestore();
 
-  protected constructor(private firestoreService: FirestoreService) {}
+  protected abstract readonly collectionName: string;
 
   addDoc(document: T, settings?: GetDocTransformSettings): Promise<T> {
     return this.collection
@@ -51,7 +52,7 @@ export abstract class FirestoreBase<T> {
     collectionName = this.collectionName,
     settings?: GetDocTransformSettings,
   ): Promise<T> {
-    return this.firestoreService.db
+    return this.db
       .collection(collectionName)
       .doc(id)
       .get()
@@ -64,7 +65,7 @@ export abstract class FirestoreBase<T> {
   }
 
   get collection(): CollectionReference<DocumentData> {
-    return this.firestoreService.db.collection(this.collectionName);
+    return this.db.collection(this.collectionName);
   }
 
   private async populateDocs(

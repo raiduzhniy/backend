@@ -1,11 +1,11 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { FirestoreBase, FirestoreService } from '../firebase/firestore';
+import { Filter } from 'firebase-admin/firestore';
+import { FirestoreBase } from '../firebase/firestore';
 import { OwnersService } from '../owners';
 import { VehiclesService } from '../vehicles';
 import { User } from './user.schema';
 import { UserDto, UserUpdateDto } from './users.dto';
-import { Filter } from 'firebase-admin/firestore';
 
 const DEFAULT_USER_POPULATE_FIELDS = ['owners', 'vehicles'];
 const DEFAULT_USER_REMOVE_FIELDS = ['passwordHash'];
@@ -15,11 +15,10 @@ export class UsersService extends FirestoreBase<User> {
   protected readonly collectionName: string = 'users';
 
   constructor(
-    firestoreService: FirestoreService,
     private ownersService: OwnersService,
     private vehiclesService: VehiclesService,
   ) {
-    super(firestoreService);
+    super();
   }
 
   getUsers() {
