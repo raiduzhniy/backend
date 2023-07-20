@@ -5,8 +5,8 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { UserRole } from '../../modules/users/users.enum';
-import { UsersService } from '../../modules/users/users.service';
+import { UserRole } from '../../controllers/users/users.enum';
+import { UsersService } from '../../controllers/users/users.service';
 import { TokenUtils } from '../utils';
 
 @Injectable()

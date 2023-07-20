@@ -2,9 +2,9 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { Filter } from 'firebase-admin/firestore';
 import { SuccessResponse } from '../../shared/interfaces';
-import { FirestoreBase } from '../firebase/firestore';
-import { OwnersService } from '../owners';
-import { VehiclesService } from '../vehicles';
+import { FirestoreBase } from '../../shared/modules/firebase/firestore';
+import { OwnersService } from '../../shared/modules/owners';
+import { VehiclesService } from '../../shared/modules/vehicles';
 import { User } from './user.schema';
 import { UserDto, UserUpdateDto } from './users.dto';
 

@@ -27,6 +27,16 @@ export abstract class FirestoreBase<T> {
       .then((doc: T) => this.transformDoc(doc, settings));
   }
 
+  setDocData(docId: string, data: T): Promise<T> {
+    return this.collection
+      .doc(docId)
+      .set(data)
+      .then(() => ({
+        id: docId,
+        ...data,
+      }));
+  }
+
   updateDoc(
     id: string,
     document: Partial<T>,

@@ -1,6 +1,6 @@
 import { SchemaBase } from '../../shared/abstract-classes';
-import { Owner } from '../owners';
-import { Vehicle } from '../vehicles';
+import { Owner } from '../../shared/modules/owners';
+import { Vehicle } from '../../shared/modules/vehicles';
 import { UserAddress, UserRole } from './users.enum';
 
 export class User extends SchemaBase {

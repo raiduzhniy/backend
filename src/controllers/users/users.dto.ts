@@ -9,8 +9,8 @@ import {
   IsString,
   ValidateNested,
 } from 'class-validator';
-import { OwnerDto } from '../owners';
-import { VehicleDto } from '../vehicles';
+import { OwnerDto } from '../../shared/modules/owners';
+import { VehicleDto } from '../../shared/modules/vehicles';
 import { UserAddress, UserRole } from './users.enum';
 
 export class UserUpdateDto {
