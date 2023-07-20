@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { Filter } from 'firebase-admin/firestore';
+import { SuccessResponse } from '../../shared/interfaces';
 import { FirestoreBase } from '../firebase/firestore';
 import { OwnersService } from '../owners';
 import { VehiclesService } from '../vehicles';
@@ -55,13 +56,17 @@ export class UsersService extends FirestoreBase<User> {
     login,
     password,
     vehicles,
+    address,
   }: UserDto): Promise<User> {
     const existingUsers = await this.getDocuments({
       buildQuery: {
         filters: [
           Filter.or(
             Filter.where('login', '==', login),
-            Filter.where('apartmentNumber', '==', apartmentNumber),
+            Filter.and(
+              Filter.where('apartmentNumber', '==', apartmentNumber),
+              Filter.where('address', '==', address),
+            ),
           ),
         ],
       },
@@ -69,7 +74,7 @@ export class UsersService extends FirestoreBase<User> {
 
     if (existingUsers.length) {
       throw new BadRequestException(
-        'User with the same login or apartment number is existing',
+        'Користувач з таким логіном або адресою вже існує',
       );
     }
 
@@ -91,9 +96,12 @@ export class UsersService extends FirestoreBase<User> {
       login,
       roles,
       apartmentNumber,
+      address,
       owners: ownerIds,
       vehicles: vehicleIds,
       passwordHash,
+      confirmedUserAgreement: false,
+      lastLogin: null,
     };
 
     return this.addDoc(user, {
@@ -128,6 +136,16 @@ export class UsersService extends FirestoreBase<User> {
       owners: ownerIds,
       roles,
     });
+  }
+
+  async updateLastLogin(userId: string): Promise<User> {
+    return this.updateDoc(userId, { lastLogin: Date.now() });
+  }
+
+  async confirmUserAgreement(userId: string): Promise<SuccessResponse> {
+    return this.updateDoc(userId, { confirmedUserAgreement: true })
+      .then(() => ({ success: true }))
+      .catch(() => ({ success: false }));
   }
 
   async changePassword(userId: string, newPassword: string) {

@@ -3,3 +3,7 @@ export enum UserRole {
   Tenant = 'TENANT',
   Superadmin = 'SUPERADMIN',
 }
+
+export enum UserAddress {
+  Kyivska3 = 'Kyivska3',
+}

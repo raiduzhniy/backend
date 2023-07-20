@@ -32,7 +32,7 @@ export class UsersController {
   }
 
   @Post()
-  @Roles(UserRole.Admin)
+  @Roles(UserRole.Superadmin)
   async createUser(@Body() userDto: UserDto): Promise<User> {
     return this.usersService.createUser(userDto);
   }
