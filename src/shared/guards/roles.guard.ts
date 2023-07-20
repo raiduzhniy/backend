@@ -1,7 +1,13 @@
-import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { UserRole } from '../../modules/users/users.enum';
 import { UsersService } from '../../modules/users/users.service';
+import { TokenUtils } from '../utils';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -17,10 +23,16 @@ export class RolesGuard implements CanActivate {
       return true;
     }
 
-    // TODO [Komoff] get user from request cookies(bearer token)
-    // const user = await this.usersService.getUser('user id from JWT token from request here');
+    const request = context.switchToHttp().getRequest();
+    const tokenPayload = TokenUtils.getTokenPayload(request);
 
-    return this.matchRoles(roles, []);
+    const user = await this.usersService.getUserById(tokenPayload.id);
+
+    if (this.matchRoles(roles, user.roles)) {
+      return true;
+    }
+
+    throw new ForbiddenException('Недостатньо прав для виконання операції');
   }
 
   private matchRoles(roles: UserRole[], userRoles: UserRole[]): boolean {
@@ -30,7 +42,6 @@ export class RolesGuard implements CanActivate {
       return obj;
     }, {});
 
-    return true;
-    // return roles.some((role) => userRolesMap[role]);
+    return roles.some((role) => userRolesMap[role]);
   }
 }
