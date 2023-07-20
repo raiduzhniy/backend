@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { LoggerModule } from 'nestjs-pino';
+import { ContactsModule } from './controllers/contacts';
 import configuration from './environments/configuration.environment';
 import { AboutUsModule } from './controllers/about-us';
 import { AuthModule } from './controllers/auth';
@@ -34,6 +35,7 @@ import { AuthGuard } from './shared/guards/auth.guard';
     AuthModule,
     FirebaseModule,
     AboutUsModule,
+    ContactsModule,
   ],
   providers: [
     {
