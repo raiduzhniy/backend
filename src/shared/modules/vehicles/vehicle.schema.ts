@@ -1,4 +1,4 @@
-import { SchemaBase } from '../../shared/abstract-classes';
+import { SchemaBase } from '../../abstract-classes';
 import { VehicleType } from './vehicles.enum';
 
 export class Vehicle extends SchemaBase {

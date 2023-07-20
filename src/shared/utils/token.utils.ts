@@ -1,5 +1,5 @@
 import { Request } from 'express';
-import { TokenPayload } from '../../modules/auth/auth.interface';
+import { TokenPayload } from '../../controllers/auth/auth.interface';
 
 export const TOKEN_PAYLOAD_KEY = 'tokenPayload';
 

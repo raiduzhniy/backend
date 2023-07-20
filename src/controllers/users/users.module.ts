@@ -1,6 +1,6 @@
 import { Global, Module } from '@nestjs/common';
-import { OwnersModule } from '../owners';
-import { VehiclesModule } from '../vehicles';
+import { OwnersModule } from '../../shared/modules/owners';
+import { VehiclesModule } from '../../shared/modules/vehicles';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 
