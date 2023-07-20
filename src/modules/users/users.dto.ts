@@ -11,7 +11,7 @@ import {
 } from 'class-validator';
 import { OwnerDto } from '../owners';
 import { VehicleDto } from '../vehicles';
-import { UserRole } from './users.enum';
+import { UserAddress, UserRole } from './users.enum';
 
 export class UserUpdateDto {
   @IsArray()
@@ -31,6 +31,10 @@ export class UserUpdateDto {
   @ValidateNested({ each: true })
   @Type(() => VehicleDto)
   vehicles?: VehicleDto[];
+
+  @IsNotEmpty()
+  @IsEnum(UserAddress)
+  address?: UserAddress;
 }
 
 export class UserDto extends UserUpdateDto {

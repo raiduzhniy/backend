@@ -7,22 +7,23 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build",
+    "build:watch": "nest build --watch",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "npm run use-default && npm run build && firebase emulators:start --only functions",
+    "start": "npm run use-default && npm run build && concurrently npm:build:watch npm:firebase:emulator",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "set-environment": "node scripts/switch-environment.mjs",
     "shell": "npm run build && firebase functions:shell",
     "deploy": "npm run use-default && firebase deploy --only functions",
     "deploy:prod": "npm run use-prod && firebase deploy --only functions",
     "logs": "firebase functions:log",
     "firebase-use": "firebase use $PROJECT_ALIAS",
     "use-default": "PROJECT_ALIAS=default npm run firebase-use",
-    "use-prod": "PROJECT_ALIAS=prod npm run firebase-use"
+    "use-prod": "PROJECT_ALIAS=prod npm run firebase-use",
+    "firebase:emulator": "firebase emulators:start --only functions"
   },
   "engines": {
     "node": "18"

@@ -1,7 +1,7 @@
 import { SchemaBase } from '../../shared/abstract-classes';
 import { Owner } from '../owners';
 import { Vehicle } from '../vehicles';
-import { UserRole } from './users.enum';
+import { UserAddress, UserRole } from './users.enum';
 
 export class User extends SchemaBase {
   login: string;
@@ -10,4 +10,7 @@ export class User extends SchemaBase {
   apartmentNumber?: number;
   owners?: (Owner | string)[];
   vehicles?: (Vehicle | string)[];
+  confirmedUserAgreement: boolean;
+  lastLogin?: number | null;
+  address?: UserAddress;
 }
