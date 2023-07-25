@@ -3,12 +3,13 @@ import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { LoggerModule } from 'nestjs-pino';
 import { ContactsModule } from './controllers/contacts';
+import { NewsModule } from './controllers/news';
 import configuration from './environments/configuration.environment';
 import { AboutUsModule } from './controllers/about-us';
 import { AuthModule } from './controllers/auth';
-import { FirebaseModule } from './shared/modules/firebase';
+import { FirebaseModule } from '@shared/modules/firebase';
 import { UsersModule } from './controllers/users';
-import { AuthGuard } from './shared/guards/auth.guard';
+import { AuthGuard } from '@shared/guards/auth.guard';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { AuthGuard } from './shared/guards/auth.guard';
     FirebaseModule,
     AboutUsModule,
     ContactsModule,
+    NewsModule,
   ],
   providers: [
     {

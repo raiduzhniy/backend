@@ -2,13 +2,25 @@ import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { ExpressAdapter } from '@nestjs/platform-express';
+import { Express } from 'express';
 import * as express from 'express';
 import { onRequest } from 'firebase-functions/v2/https';
 import * as process from 'process';
 import { AppModule } from './src/app.module';
-import { initializeApp, cert } from 'firebase-admin/app';
+import { initializeApp as initializeAdminApp, cert } from 'firebase-admin/app';
+import { initializeApp as initializeFirebaseApp } from 'firebase/app';
 
-initializeApp({
+initializeFirebaseApp({
+  apiKey: process.env.FB_API_KEY,
+  authDomain: process.env.FB_AUTH_DOMAIN,
+  databaseURL: process.env.FB_DATABASE_URL,
+  projectId: process.env.FB_PROJECT_ID,
+  storageBucket: process.env.FB_STORAGE_BUCKET,
+  messagingSenderId: process.env.FB_MESSAGING_SENDER_ID,
+  appId: process.env.FB_APP_ID,
+});
+
+initializeAdminApp({
   credential: cert({
     projectId: process.env.FB_PROJECT_ID,
     clientEmail: process.env.FB_CLIENT_EMAIL,
@@ -17,7 +29,7 @@ initializeApp({
 });
 
 const expressServer = express();
-const createFunction = async (expressInstance): Promise<void> => {
+const createFunction = async (expressInstance: Express): Promise<void> => {
   const app = await NestFactory.create(
     AppModule,
     new ExpressAdapter(expressInstance),
@@ -37,7 +49,7 @@ const createFunction = async (expressInstance): Promise<void> => {
   await app.init();
 };
 export const api = onRequest(
-  { cors: true, region: 'europe-central2' },
+  { region: 'europe-central2' },
   async (request, response) => {
     await createFunction(expressServer);
     expressServer(request, response);

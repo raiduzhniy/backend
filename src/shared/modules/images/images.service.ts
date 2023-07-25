@@ -1,37 +1,35 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { IFile } from '../../interfaces';
 import { FirebaseStorageService, StorageType } from '../firebase/storage';
 
 @Injectable()
 export class ImagesService {
   constructor(private firebaseStorageService: FirebaseStorageService) {}
 
-  async uploadImage(file: Express.Multer.File): Promise<string> {
-    const fileName = `${Date.now()}-${file.originalname.replace(' ', '_')}`;
+  async uploadImage(file: IFile): Promise<string> {
+    const fileName = `${Date.now()}_${file.originalname.replace(' ', '_')}`;
 
-    const uploaded = await this.firebaseStorageService.uploadFile(
-      {
-        storageType: StorageType.Images,
-        fileName,
-        fileData: file.buffer,
-      },
-      {
-        contentType: file.mimetype,
-      },
-    );
-
-    return this.firebaseStorageService.getDownloadLink(uploaded.ref);
+    return await this.firebaseStorageService
+      .uploadFile(
+        {
+          storageType: StorageType.Images,
+          fileName,
+          fileData: file.buffer,
+        },
+        {
+          contentType: file.mimetype,
+        },
+      )
+      .then(async (uploadRes) => {
+        return uploadRes.ref.fullPath;
+      });
   }
 
-  async deleteImage(fileName: string): Promise<void> {
-    try {
-      await this.firebaseStorageService.deleteFile({
-        storageType: StorageType.Images,
-        fileName,
-      });
+  async deleteImage(storagePath: string): Promise<void> {
+    return this.firebaseStorageService.deleteFile(storagePath);
+  }
 
-      return;
-    } catch (error) {
-      throw new InternalServerErrorException('Can not delete the file');
-    }
+  async getDownloadLink(storagePath: string): Promise<string> {
+    return this.firebaseStorageService.getDownloadLink(storagePath);
   }
 }

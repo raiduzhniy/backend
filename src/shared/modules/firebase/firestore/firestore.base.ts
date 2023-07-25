@@ -49,7 +49,7 @@ export abstract class FirestoreBase<T> {
   }
 
   getDocuments(settings?: GetDocsTransformSettings): Promise<T[]> {
-    return this.buildQuery(settings.buildQuery)
+    return this.buildQuery(settings?.buildQuery)
       .get()
       .then((snapshot) =>
         snapshot.docs.map((doc) => transformDocToData<T>(doc)),
@@ -157,13 +157,13 @@ export abstract class FirestoreBase<T> {
     docs: T[],
     settings: Omit<GetDocsTransformSettings, 'buildQuery'>,
   ): Promise<T[]> {
-    if (settings.removeFields) {
+    if (settings?.removeFields) {
       docs.forEach((doc) => {
         settings.removeFields.forEach((field) => delete doc[field]);
       });
     }
 
-    if (settings.populate) {
+    if (settings?.populate) {
       return await this.populateDocs(docs, settings.populate);
     }
 

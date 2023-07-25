@@ -12,11 +12,7 @@ import {
   ref,
   uploadBytes,
 } from 'firebase/storage';
-import { StorageType } from './firebase-storage.enum';
-import {
-  StorageRefData,
-  UploadFileInterface,
-} from './firebase-storage.interface';
+import { UploadFileInterface } from './firebase-storage.interface';
 
 @Injectable()
 export class FirebaseStorageService {
@@ -25,33 +21,25 @@ export class FirebaseStorageService {
     metadata?: UploadMetadata,
   ): Promise<UploadResult> {
     return uploadBytes(
-      this.getStorageRef(fileName, storageType),
+      this.getStorageRef(`${storageType}/${fileName}`),
       fileData,
       metadata,
     );
   }
 
-  getStorageRef(path: string, storageType: StorageType): StorageReference {
-    return ref(this.storage, `${storageType}/${path}`);
+  getStorageRef(storagePath: string): StorageReference {
+    return ref(this.storage, storagePath);
   }
 
-  getDownloadLink(data: StorageRefData | StorageReference): Promise<string> {
-    return getDownloadURL(this.createStorageRef(data));
+  getDownloadLink(storagePath: string): Promise<string> {
+    return getDownloadURL(this.getStorageRef(storagePath));
   }
 
-  deleteFile(data: StorageRefData | StorageReference): Promise<void> {
-    return deleteObject(this.createStorageRef(data));
+  deleteFile(storagePath: string): Promise<void> {
+    return deleteObject(this.getStorageRef(storagePath));
   }
 
   private get storage(): FirebaseStorage {
     return getStorage();
-  }
-
-  private createStorageRef(
-    data: StorageRefData | StorageReference,
-  ): StorageReference {
-    return 'storageType' in data
-      ? this.getStorageRef(data.fileName, data.storageType)
-      : data;
   }
 }
