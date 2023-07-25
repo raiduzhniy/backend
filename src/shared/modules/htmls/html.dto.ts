@@ -9,3 +9,11 @@ export class HtmlDto {
   @IsString()
   html: string;
 }
+
+export class EditHtmlDto {
+  @IsString()
+  title?: string;
+
+  @IsString()
+  html?: string;
+}

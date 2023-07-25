@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { SuccessResponse } from '@shared/interfaces';
 import { FirestoreBase } from '@shared/modules/firebase/firestore';
 import { ImagesService } from '@shared/modules/images/images.service';
-import { NewsDto } from './news.dto';
+import { EditNewsDto, NewsDto } from './news.dto';
 import { News, NewsSchema } from './news.schema';
 
 @Injectable()
@@ -24,6 +24,24 @@ export class NewsService extends FirestoreBase<NewsSchema> {
     };
 
     return this.addDoc(news);
+  }
+
+  async editNews(id: string, newsDto: EditNewsDto): Promise<NewsSchema> {
+    const { image, ...restNews } = newsDto;
+    let storagePath: string;
+
+    if (image) {
+      const existedNews = await this.getDocumentById(id);
+
+      await this.imagesService.deleteImage(existedNews.storagePath);
+
+      storagePath = await this.imagesService.uploadImage(image);
+    }
+
+    return this.updateDoc(id, {
+      ...restNews,
+      ...(storagePath ? { storagePath } : {}),
+    });
   }
 
   async deleteNews(newsId: string): Promise<SuccessResponse> {

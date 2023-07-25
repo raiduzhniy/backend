@@ -5,13 +5,14 @@ import {
   Get,
   Param,
   Post,
+  Put,
   UseGuards,
 } from '@nestjs/common';
 import { IsPublicRequest, Roles } from '@shared/decorators';
 import { RolesGuard } from '@shared/guards';
 import { SuccessResponse } from '@shared/interfaces';
 import { UserRole } from '../users/users.enum';
-import { NewsDto } from './news.dto';
+import { EditNewsDto, NewsDto } from './news.dto';
 import { News, NewsSchema } from './news.schema';
 import { NewsService } from './news.service';
 
@@ -24,6 +25,15 @@ export class NewsController {
   @Roles(UserRole.Admin, UserRole.Superadmin)
   async createNews(@Body() newsDto: NewsDto): Promise<NewsSchema> {
     return this.newsService.createNews(newsDto);
+  }
+
+  @Put(':id/edit')
+  @Roles(UserRole.Admin, UserRole.Superadmin)
+  async edit(
+    @Body() newsDto: EditNewsDto,
+    @Param('id') id: string,
+  ): Promise<NewsSchema> {
+    return this.newsService.editNews(id, newsDto);
   }
 
   @Delete(':id/delete')

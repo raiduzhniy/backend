@@ -16,9 +16,15 @@ import { NewsService } from './news.service';
 })
 export class NewsModule implements NestModule {
   configure(consumer: MiddlewareConsumer): any {
-    consumer.apply(FilesMiddleware).forRoutes({
-      path: `news/create`,
-      method: RequestMethod.POST,
-    });
+    consumer.apply(FilesMiddleware).forRoutes(
+      {
+        path: `news/create`,
+        method: RequestMethod.POST,
+      },
+      {
+        path: `news/*/edit`,
+        method: RequestMethod.PUT,
+      },
+    );
   }
 }
