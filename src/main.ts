@@ -1,13 +1,9 @@
 import { NestFactory } from '@nestjs/core';
-import { ExpressAdapter } from '@nestjs/platform-express';
-import * as express from 'express';
-import { Express } from 'express';
+
 import { cert, initializeApp as initializeAdminApp } from 'firebase-admin/app';
-import { onRequest } from 'firebase-functions/v2/https';
 import { initializeApp as initializeFirebaseApp } from 'firebase/app';
-import * as process from 'process';
-import { setupApplication } from './app.config';
-import { AppModule } from './src/app.module';
+import { setupApplication } from '../app.config';
+import { AppModule } from './app.module';
 
 initializeFirebaseApp({
   apiKey: process.env.FB_API_KEY,
@@ -27,18 +23,10 @@ initializeAdminApp({
   }),
 });
 
-const expressServer = express();
-const createFunction = async (expressInstance: Express): Promise<void> => {
+(async () => {
   const app = setupApplication(
-    await NestFactory.create(AppModule, new ExpressAdapter(expressInstance)),
+    await NestFactory.create(AppModule, { bufferLogs: true }),
   );
 
-  await app.init();
-};
-export const api = onRequest(
-  { region: 'europe-central2' },
-  async (request, response) => {
-    await createFunction(expressServer);
-    expressServer(request, response);
-  },
-);
+  await app.listen(3333);
+})();

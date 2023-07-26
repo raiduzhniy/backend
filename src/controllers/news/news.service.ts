@@ -1,7 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { SuccessResponse } from '@shared/interfaces';
+import {
+  ReceivedDocuments,
+  SuccessResponse,
+  TableQuery,
+} from '@shared/interfaces';
 import { FirestoreBase } from '@shared/modules/firebase/firestore';
 import { ImagesService } from '@shared/modules/images/images.service';
+import { DocumentsUtils } from '@shared/utils';
 import { EditNewsDto, NewsDto } from './news.dto';
 import { News, NewsSchema } from './news.schema';
 
@@ -18,9 +23,12 @@ export class NewsService extends FirestoreBase<NewsSchema> {
 
     const storagePath = await this.imagesService.uploadImage(image);
 
+    const createdAtDate = new Date();
+
     const news: NewsSchema = {
       ...restDto,
       storagePath,
+      createdAt: createdAtDate.toISOString(),
     };
 
     return this.addDoc(news);
@@ -38,9 +46,12 @@ export class NewsService extends FirestoreBase<NewsSchema> {
       storagePath = await this.imagesService.uploadImage(image);
     }
 
+    const editedAt = new Date();
+
     return this.updateDoc(id, {
       ...restNews,
       ...(storagePath ? { storagePath } : {}),
+      editedAt: editedAt.toISOString(),
     });
   }
 
@@ -59,10 +70,15 @@ export class NewsService extends FirestoreBase<NewsSchema> {
     }
   }
 
-  async getNews(): Promise<News[]> {
-    const newsWithFullPath: NewsSchema[] = await this.getDocuments();
+  async getNews(queryParams?: TableQuery): Promise<ReceivedDocuments<News>> {
+    const paginateQuery =
+      DocumentsUtils.createBuildQueryFromQueryParams(queryParams);
 
-    const newsPromises = newsWithFullPath.map(
+    const receivedDocuments = await this.getDocuments({
+      buildQuery: paginateQuery,
+    });
+
+    const newsPromises = receivedDocuments.elements.map(
       async ({ storagePath, ...news }) => {
         return {
           ...news,
@@ -71,6 +87,9 @@ export class NewsService extends FirestoreBase<NewsSchema> {
       },
     );
 
-    return Promise.all(newsPromises);
+    return {
+      ...receivedDocuments,
+      elements: await Promise.all(newsPromises),
+    };
   }
 }

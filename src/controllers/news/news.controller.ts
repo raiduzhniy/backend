@@ -7,10 +7,15 @@ import {
   Post,
   Put,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { IsPublicRequest, Roles } from '@shared/decorators';
 import { RolesGuard } from '@shared/guards';
-import { SuccessResponse } from '@shared/interfaces';
+import {
+  ReceivedDocuments,
+  SuccessResponse,
+  TableQuery,
+} from '@shared/interfaces';
 import { UserRole } from '../users/users.enum';
 import { EditNewsDto, NewsDto } from './news.dto';
 import { News, NewsSchema } from './news.schema';
@@ -44,7 +49,9 @@ export class NewsController {
 
   @Get()
   @IsPublicRequest()
-  async getNews(): Promise<News[]> {
-    return this.newsService.getNews();
+  async getNews(
+    @Query() queryParams?: TableQuery,
+  ): Promise<ReceivedDocuments<News>> {
+    return this.newsService.getNews(queryParams);
   }
 }

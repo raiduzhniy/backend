@@ -1,10 +1,10 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { Filter } from 'firebase-admin/firestore';
-import { SuccessResponse } from '../../shared/interfaces';
-import { FirestoreBase } from '../../shared/modules/firebase/firestore';
-import { OwnersService } from '../../shared/modules/owners';
-import { VehiclesService } from '../../shared/modules/vehicles';
+import { SuccessResponse } from '@shared/interfaces';
+import { FirestoreBase } from '@shared/modules/firebase/firestore';
+import { OwnersService } from '@shared/modules/owners';
+import { VehiclesService } from '@shared/modules/vehicles';
 import { User } from './user.schema';
 import { UserDto, UserUpdateDto } from './users.dto';
 
@@ -46,7 +46,7 @@ export class UsersService extends FirestoreBase<User> {
         limit: 1,
       },
       populate: DEFAULT_USER_POPULATE_FIELDS,
-    }).then(([user]) => user);
+    }).then((received) => received.elements[0]);
   }
 
   async createUser({
@@ -72,7 +72,7 @@ export class UsersService extends FirestoreBase<User> {
       },
     });
 
-    if (existingUsers.length) {
+    if (existingUsers.elements.length) {
       throw new BadRequestException(
         'Користувач з таким логіном або адресою вже існує',
       );
