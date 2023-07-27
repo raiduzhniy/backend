@@ -1,10 +1,11 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { DateUtils } from '@shared/utils';
 import * as bcrypt from 'bcrypt';
 import { Filter } from 'firebase-admin/firestore';
-import { SuccessResponse } from '../../shared/interfaces';
-import { FirestoreBase } from '../../shared/modules/firebase/firestore';
-import { OwnersService } from '../../shared/modules/owners';
-import { VehiclesService } from '../../shared/modules/vehicles';
+import { SuccessResponse } from '@shared/interfaces';
+import { FirestoreBase } from '@shared/modules/firebase/firestore';
+import { OwnersService } from '@shared/modules/owners';
+import { VehiclesService } from '@shared/modules/vehicles';
 import { User } from './user.schema';
 import { UserDto, UserUpdateDto } from './users.dto';
 
@@ -46,7 +47,7 @@ export class UsersService extends FirestoreBase<User> {
         limit: 1,
       },
       populate: DEFAULT_USER_POPULATE_FIELDS,
-    }).then(([user]) => user);
+    }).then((received) => received.elements[0]);
   }
 
   async createUser({
@@ -72,7 +73,7 @@ export class UsersService extends FirestoreBase<User> {
       },
     });
 
-    if (existingUsers.length) {
+    if (existingUsers.elements.length) {
       throw new BadRequestException(
         'Користувач з таким логіном або адресою вже існує',
       );
@@ -139,7 +140,7 @@ export class UsersService extends FirestoreBase<User> {
   }
 
   async updateLastLogin(userId: string): Promise<User> {
-    return this.updateDoc(userId, { lastLogin: Date.now() });
+    return this.updateDoc(userId, { lastLogin: DateUtils.nowISODate() });
   }
 
   async confirmUserAgreement(userId: string): Promise<SuccessResponse> {
@@ -176,13 +177,13 @@ export class UsersService extends FirestoreBase<User> {
     );
   }
 
-  private deleteOwners(ownerIds: string[]): Promise<void>[] {
+  private deleteOwners(ownerIds: string[]): Promise<SuccessResponse>[] {
     return ownerIds.map(async (ownerId) => {
       return await this.ownersService.findByIdAndDelete(ownerId);
     });
   }
 
-  private deleteVehicles(vehicleIds: string[]): Promise<void>[] {
+  private deleteVehicles(vehicleIds: string[]): Promise<SuccessResponse>[] {
     return vehicleIds.map(async (vehicleIds) => {
       return await this.vehiclesService.findByIdAndDelete(vehicleIds);
     });

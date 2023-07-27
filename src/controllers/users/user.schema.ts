@@ -1,6 +1,6 @@
-import { SchemaBase } from '../../shared/abstract-classes';
-import { Owner } from '../../shared/modules/owners';
-import { Vehicle } from '../../shared/modules/vehicles';
+import { SchemaBase } from '@shared/abstract-classes';
+import { Owner } from '@shared/modules/owners';
+import { Vehicle } from '@shared/modules/vehicles';
 import { UserAddress, UserRole } from './users.enum';
 
 export class User extends SchemaBase {
@@ -11,6 +11,6 @@ export class User extends SchemaBase {
   owners?: (Owner | string)[];
   vehicles?: (Vehicle | string)[];
   confirmedUserAgreement: boolean;
-  lastLogin?: number | null;
+  lastLogin?: string | null;
   address?: UserAddress;
 }

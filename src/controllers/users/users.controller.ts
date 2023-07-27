@@ -7,8 +7,8 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
-import { Roles } from '../../shared/decorators';
-import { RolesGuard } from '../../shared/guards';
+import { Roles } from '@shared/decorators';
+import { RolesGuard } from '@shared/guards';
 import { UserDto, UserUpdateDto } from './users.dto';
 import { User } from './user.schema';
 import { UserRole } from './users.enum';
@@ -20,13 +20,13 @@ export class UsersController {
   constructor(private usersService: UsersService) {}
 
   @Get()
-  @Roles(UserRole.Admin)
+  @Roles(UserRole.Admin, UserRole.Superadmin)
   async getUsers() {
     return this.usersService.getUsers();
   }
 
   @Get(':id')
-  @Roles(UserRole.Admin)
+  @Roles(UserRole.Admin, UserRole.Superadmin)
   async getUser(@Param('id') id: string): Promise<User> {
     return this.usersService.getUserById(id);
   }
@@ -38,7 +38,7 @@ export class UsersController {
   }
 
   @Put(':id')
-  @Roles(UserRole.Admin)
+  @Roles(UserRole.Admin, UserRole.Superadmin)
   async updateUser(
     @Param('id') id: string,
     @Body() userDto: UserUpdateDto,
@@ -47,7 +47,7 @@ export class UsersController {
   }
 
   @Put(':id/reset-password')
-  @Roles(UserRole.Admin)
+  @Roles(UserRole.Admin, UserRole.Superadmin)
   async resetPassword(@Param('id') id: string): Promise<User> {
     return this.usersService.resetPassword(id);
   }

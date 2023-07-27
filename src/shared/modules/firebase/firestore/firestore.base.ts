@@ -1,3 +1,4 @@
+import { ReceivedDocuments, SuccessResponse } from '@shared/interfaces';
 import {
   CollectionReference,
   DocumentData,
@@ -48,13 +49,26 @@ export abstract class FirestoreBase<T> {
       .then(async () => await this.getDocumentById(id, undefined, settings));
   }
 
-  getDocuments(settings?: GetDocsTransformSettings): Promise<T[]> {
-    return this.buildQuery(settings.buildQuery)
+  getDocuments(
+    settings?: GetDocsTransformSettings,
+  ): Promise<ReceivedDocuments<T>> {
+    return this.buildQuery(settings?.buildQuery)
       .get()
-      .then((snapshot) =>
-        snapshot.docs.map((doc) => transformDocToData<T>(doc)),
-      )
-      .then((docs) => this.transformDocs(docs, settings));
+      .then((snapshot) => {
+        return snapshot.docs.map((doc) => transformDocToData<T>(doc));
+      })
+      .then(async (docs) => {
+        const totalElements = await this.totalDocumentsCount;
+        const pageSize = settings?.buildQuery?.limit || docs.length;
+
+        return {
+          elements: await this.transformDocs(docs, settings),
+          pageSize: settings?.buildQuery?.limit || docs.length,
+          pageNumber: settings?.buildQuery?.offset / pageSize + 1 || 1,
+          totalElements,
+          totalPages: Math.round(totalElements / pageSize),
+        };
+      });
   }
 
   getDocumentById(
@@ -70,12 +84,23 @@ export abstract class FirestoreBase<T> {
       .then((doc: T) => this.transformDoc(doc, settings));
   }
 
-  findByIdAndDelete(id: string): Promise<void> {
-    return this.collection.doc(id).delete().then();
+  findByIdAndDelete(id: string): Promise<SuccessResponse> {
+    return this.collection
+      .doc(id)
+      .delete()
+      .then(() => ({ success: true }))
+      .catch(() => ({ success: false }));
   }
 
-  get collection(): CollectionReference<DocumentData> {
+  protected get collection(): CollectionReference<DocumentData> {
     return this.db.collection(this.collectionName);
+  }
+
+  private get totalDocumentsCount(): Promise<number> {
+    return this.collection
+      .count()
+      .get()
+      .then((snap) => snap.data().count);
   }
 
   private async populateDocs(
@@ -157,13 +182,13 @@ export abstract class FirestoreBase<T> {
     docs: T[],
     settings: Omit<GetDocsTransformSettings, 'buildQuery'>,
   ): Promise<T[]> {
-    if (settings.removeFields) {
+    if (settings?.removeFields) {
       docs.forEach((doc) => {
         settings.removeFields.forEach((field) => delete doc[field]);
       });
     }
 
-    if (settings.populate) {
+    if (settings?.populate) {
       return await this.populateDocs(docs, settings.populate);
     }
 
@@ -171,9 +196,9 @@ export abstract class FirestoreBase<T> {
   }
 
   private buildQuery(buildQuery: BuildQuery = {}): Query {
-    return Object.entries(buildQuery).reduce((collection, [key, value]) => {
+    return Object.entries(buildQuery).reduce((collection, [key, args]) => {
       if (key === 'filters') {
-        return value.reduce((query, filter) => {
+        return args.reduce((query, filter) => {
           if (Array.isArray(filter)) {
             return query[QUERY_BUILDER_MAP[key]](...filter);
           }
@@ -182,7 +207,11 @@ export abstract class FirestoreBase<T> {
         }, collection);
       }
 
-      return collection[QUERY_BUILDER_MAP[key]](value);
+      if (Array.isArray(args)) {
+        return collection[QUERY_BUILDER_MAP[key]](...args);
+      }
+
+      return collection[QUERY_BUILDER_MAP[key]](args);
     }, this.collection);
   }
 }

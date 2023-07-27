@@ -3,7 +3,7 @@ import { OrderDirection } from './firestore.enum';
 
 type OrderField = string;
 
-export type OrderBy = [OrderField, OrderDirection];
+export type OrderBy = [OrderField, OrderDirection?];
 
 export type Populate =
   | string
@@ -19,10 +19,14 @@ export interface GetDocTransformSettings {
 
 export type FilterQuery = [string, WhereFilterOp, any] | Filter;
 
-export interface BuildQuery {
-  filters?: FilterQuery[];
+export interface PaginateQuery {
   orderBy?: OrderBy;
   limit?: number;
+  offset?: number;
+}
+
+export interface BuildQuery extends PaginateQuery {
+  filters?: FilterQuery[];
   // TODO [Komoff] add builders if need
 }
 
