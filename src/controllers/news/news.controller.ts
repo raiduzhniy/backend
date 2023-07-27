@@ -34,7 +34,7 @@ export class NewsController {
 
   @Put(':id/edit')
   @Roles(UserRole.Admin, UserRole.Superadmin)
-  async edit(
+  async editNews(
     @Body() newsDto: EditNewsDto,
     @Param('id') id: string,
   ): Promise<NewsSchema> {
@@ -53,5 +53,11 @@ export class NewsController {
     @Query() queryParams?: TableQuery,
   ): Promise<ReceivedDocuments<News>> {
     return this.newsService.getNews(queryParams);
+  }
+
+  @Get(':id')
+  @IsPublicRequest()
+  async getOneNews(@Param('id') id: string) {
+    return this.newsService.getOneNews(id);
   }
 }

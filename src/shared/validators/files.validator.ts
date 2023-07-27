@@ -6,7 +6,7 @@ export const IsFile = (): PropertyDecorator => {
     name: 'isFile',
     validator: {
       validate(value: IFile): boolean {
-        return !!value.buffer;
+        return !!value?.buffer;
       },
       defaultMessage(validationArguments?: ValidationArguments): string {
         return `Field '${validationArguments.property}' is not a file`;

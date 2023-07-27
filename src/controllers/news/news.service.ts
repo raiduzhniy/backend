@@ -6,7 +6,7 @@ import {
 } from '@shared/interfaces';
 import { FirestoreBase } from '@shared/modules/firebase/firestore';
 import { ImagesService } from '@shared/modules/images/images.service';
-import { DocumentsUtils } from '@shared/utils';
+import { DateUtils, DocumentsUtils } from '@shared/utils';
 import { EditNewsDto, NewsDto } from './news.dto';
 import { News, NewsSchema } from './news.schema';
 
@@ -38,20 +38,29 @@ export class NewsService extends FirestoreBase<NewsSchema> {
     const { image, ...restNews } = newsDto;
     let storagePath: string;
 
-    if (image) {
+    if (image || image === null) {
       const existedNews = await this.getDocumentById(id);
 
-      await this.imagesService.deleteImage(existedNews.storagePath);
+      existedNews.storagePath &&
+        (await this.imagesService
+          .deleteImage(existedNews?.storagePath)
+          .catch((error) => {
+            if (error.code !== 'storage/object-not-found') {
+              throw error;
+            }
+          }));
 
+      storagePath = null;
+    }
+
+    if (image) {
       storagePath = await this.imagesService.uploadImage(image);
     }
 
-    const editedAt = new Date();
-
     return this.updateDoc(id, {
       ...restNews,
-      ...(storagePath ? { storagePath } : {}),
-      editedAt: editedAt.toISOString(),
+      ...(storagePath || storagePath === null ? { storagePath } : {}),
+      editedAt: DateUtils.nowISODate(),
     });
   }
 
@@ -78,18 +87,29 @@ export class NewsService extends FirestoreBase<NewsSchema> {
       buildQuery: paginateQuery,
     });
 
-    const newsPromises = receivedDocuments.elements.map(
-      async ({ storagePath, ...news }) => {
-        return {
-          ...news,
-          imageUrl: await this.imagesService.getDownloadLink(storagePath),
-        } as News;
-      },
-    );
+    const newsPromises = receivedDocuments.elements.map((news) => {
+      return this.transformStoragePathToUrl(news);
+    });
 
     return {
       ...receivedDocuments,
       elements: await Promise.all(newsPromises),
     };
+  }
+
+  async getOneNews(id: string): Promise<News> {
+    const news = await this.getDocumentById(id);
+
+    return this.transformStoragePathToUrl(news);
+  }
+
+  private async transformStoragePathToUrl({
+    storagePath,
+    ...news
+  }: NewsSchema): Promise<News> {
+    return {
+      ...news,
+      imageUrl: await this.imagesService.getDownloadLink(storagePath),
+    } as News;
   }
 }

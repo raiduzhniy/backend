@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { DateUtils } from '@shared/utils';
 import * as bcrypt from 'bcrypt';
 import { Filter } from 'firebase-admin/firestore';
 import { SuccessResponse } from '@shared/interfaces';
@@ -139,7 +140,7 @@ export class UsersService extends FirestoreBase<User> {
   }
 
   async updateLastLogin(userId: string): Promise<User> {
-    return this.updateDoc(userId, { lastLogin: Date.now() });
+    return this.updateDoc(userId, { lastLogin: DateUtils.nowISODate() });
   }
 
   async confirmUserAgreement(userId: string): Promise<SuccessResponse> {
@@ -176,13 +177,13 @@ export class UsersService extends FirestoreBase<User> {
     );
   }
 
-  private deleteOwners(ownerIds: string[]): Promise<void>[] {
+  private deleteOwners(ownerIds: string[]): Promise<SuccessResponse>[] {
     return ownerIds.map(async (ownerId) => {
       return await this.ownersService.findByIdAndDelete(ownerId);
     });
   }
 
-  private deleteVehicles(vehicleIds: string[]): Promise<void>[] {
+  private deleteVehicles(vehicleIds: string[]): Promise<SuccessResponse>[] {
     return vehicleIds.map(async (vehicleIds) => {
       return await this.vehiclesService.findByIdAndDelete(vehicleIds);
     });

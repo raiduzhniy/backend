@@ -1,4 +1,4 @@
-import { ReceivedDocuments } from '@shared/interfaces';
+import { ReceivedDocuments, SuccessResponse } from '@shared/interfaces';
 import {
   CollectionReference,
   DocumentData,
@@ -84,11 +84,15 @@ export abstract class FirestoreBase<T> {
       .then((doc: T) => this.transformDoc(doc, settings));
   }
 
-  findByIdAndDelete(id: string): Promise<void> {
-    return this.collection.doc(id).delete().then();
+  findByIdAndDelete(id: string): Promise<SuccessResponse> {
+    return this.collection
+      .doc(id)
+      .delete()
+      .then(() => ({ success: true }))
+      .catch(() => ({ success: false }));
   }
 
-  get collection(): CollectionReference<DocumentData> {
+  protected get collection(): CollectionReference<DocumentData> {
     return this.db.collection(this.collectionName);
   }
 

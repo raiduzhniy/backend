@@ -16,5 +16,5 @@ export class EditNewsDto extends EditHtmlDto {
   @IsOptional()
   @IsFile()
   @IsSupportedMimeTypes(SUPPORTED_IMAGES_FORMATS)
-  image?: IFile;
+  image?: IFile | null;
 }
