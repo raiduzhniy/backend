@@ -3,19 +3,31 @@ import { ConfigService } from '@nestjs/config';
 import { Message } from 'node-telegram-bot-api';
 import * as TelegramBot from 'node-telegram-bot-api';
 
+let TELEGRAM_BOT: TelegramBot;
+
 @Injectable()
 export class TelegramBotService {
-  private readonly bot = new TelegramBot(
-    this.configService.get('telegramBotToken'),
-    { polling: true },
-  );
+  private readonly bot: TelegramBot;
 
   private readonly groupId: number = this.configService.get('telegramGroupId');
 
   private readonly frontendBaseUrl: string =
     this.configService.get('frontendBaseUrl');
 
-  constructor(private configService: ConfigService) {}
+  constructor(private configService: ConfigService) {
+    /**
+     * @description
+     * To avoid duplication of initialization of TelegramBot
+     * Because of Firebase functions is serverless approach Firebase runs application from the beginning every request
+     */
+    if (!TELEGRAM_BOT) {
+      TELEGRAM_BOT = new TelegramBot(
+        this.configService.get('telegramBotToken'),
+        { polling: true },
+      );
+    }
+    this.bot = TELEGRAM_BOT;
+  }
 
   createdNews(newsId: string, newsTitle: string): Promise<Message> {
     return this.sendMessage(this.createNewsMessage(newsId, newsTitle));

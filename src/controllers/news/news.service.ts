@@ -35,6 +35,7 @@ export class NewsService extends FirestoreBase<NewsSchema> {
       ...restDto,
       storagePath,
       createdAt: createdAtDate.toISOString(),
+      editedAt: null,
     };
 
     return this.addDoc(news).then((news) => {
@@ -119,7 +120,9 @@ export class NewsService extends FirestoreBase<NewsSchema> {
   }: NewsSchema): Promise<News> {
     return {
       ...news,
-      imageUrl: await this.imagesService.getDownloadLink(storagePath),
+      imageUrl: storagePath
+        ? await this.imagesService.getDownloadLink(storagePath)
+        : null,
     } as News;
   }
 }
