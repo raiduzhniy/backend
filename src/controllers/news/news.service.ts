@@ -6,6 +6,7 @@ import {
 } from '@shared/interfaces';
 import { FirestoreBase } from '@shared/modules/firebase/firestore';
 import { ImagesService } from '@shared/modules/images/images.service';
+import { TelegramBotService } from '@shared/modules/telegram-bot/telegram-bot.service';
 import { DateUtils, DocumentsUtils } from '@shared/utils';
 import { EditNewsDto, NewsDto } from './news.dto';
 import { News, NewsSchema } from './news.schema';
@@ -14,14 +15,19 @@ import { News, NewsSchema } from './news.schema';
 export class NewsService extends FirestoreBase<NewsSchema> {
   protected readonly collectionName: string = 'news';
 
-  constructor(private imagesService: ImagesService) {
+  constructor(
+    private imagesService: ImagesService,
+    private telegramBotService: TelegramBotService,
+  ) {
     super();
   }
 
   async createNews(newsDto: NewsDto): Promise<NewsSchema> {
     const { image, ...restDto } = newsDto;
 
-    const storagePath = await this.imagesService.uploadImage(image);
+    const storagePath = image
+      ? await this.imagesService.uploadImage(image)
+      : null;
 
     const createdAtDate = new Date();
 
@@ -29,9 +35,14 @@ export class NewsService extends FirestoreBase<NewsSchema> {
       ...restDto,
       storagePath,
       createdAt: createdAtDate.toISOString(),
+      editedAt: null,
     };
 
-    return this.addDoc(news);
+    return this.addDoc(news).then((news) => {
+      this.telegramBotService.createdNews(news.id, news.title);
+
+      return news;
+    });
   }
 
   async editNews(id: string, newsDto: EditNewsDto): Promise<NewsSchema> {
@@ -109,7 +120,9 @@ export class NewsService extends FirestoreBase<NewsSchema> {
   }: NewsSchema): Promise<News> {
     return {
       ...news,
-      imageUrl: await this.imagesService.getDownloadLink(storagePath),
+      imageUrl: storagePath
+        ? await this.imagesService.getDownloadLink(storagePath)
+        : null,
     } as News;
   }
 }
